@@ -6,17 +6,19 @@ namespace GestaoDesignerDeMemorias.Models
     {
         public int Id { get; set; }
 
+        [Required]
         public int ClienteId { get; set; }
-        public Cliente Cliente { get; set; } = null!;
+        
+        public Cliente? Cliente { get; set; }   // ← Mudado para nullable
 
-        public string NomeEvento { get; set; } = string.Empty;     // "XV Ana Júlia" ou "Logo - Loja da Maria"
+        public string NomeEvento { get; set; } = string.Empty;
 
         public DateTime? DataEvento { get; set; }
 
         [Required]
-        public string TipoProjeto { get; set; } = "Evento";        // "Evento" ou "Empreendedor"
+        public string TipoProjeto { get; set; } = "Evento";
 
-        public string Status { get; set; } = "Novo";               // Novo, Briefing, EmProducao, Revisao, Aprovado, Finalizado, Cancelado
+        public string Status { get; set; } = "Novo";
 
         public decimal ValorTotal { get; set; } = 0;
 
