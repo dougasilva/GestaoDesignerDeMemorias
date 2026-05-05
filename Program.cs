@@ -1,5 +1,6 @@
 using GestaoDesignerDeMemorias.Data;
 using GestaoDesignerDeMemorias.Middleware;
+using GestaoDesignerDeMemorias.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -11,6 +12,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Controllers
 builder.Services.AddControllers();
+
+// Registra o serviço de PDF
+builder.Services.AddScoped<PropostaPdfService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -26,7 +30,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 🔥 Middleware de logs e erros globais
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
