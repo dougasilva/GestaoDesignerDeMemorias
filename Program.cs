@@ -22,6 +22,9 @@ builder.Services.AddControllers()
 // Registra o serviço de PDF
 builder.Services.AddScoped<PropostaPdfService>();
 
+// Registra o serviço de WhatsApp
+builder.Services.AddScoped<WhatsAppService>();
+
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
