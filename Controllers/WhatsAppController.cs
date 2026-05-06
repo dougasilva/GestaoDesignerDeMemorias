@@ -1,4 +1,3 @@
-using GestaoDesignerDeMemorias.Data;
 using GestaoDesignerDeMemorias.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,25 +14,95 @@ namespace GestaoDesignerDeMemorias.Controllers
             _whatsAppService = whatsAppService;
         }
 
+        // Webhook principal - recebe mensagens
         [HttpPost("webhook")]
         public async Task<IActionResult> Webhook([FromBody] dynamic payload)
         {
-            // Extrair dados reais (melhorar depois com provedor)
-            string whatsapp = "11995108729"; // placeholder
-            string mensagem = payload.ToString();
+            try
+            {
+                Console.WriteLine($"📨 Payload completo recebido: {payload}");
 
-            var (resposta, projetoId) = await _whatsAppService.ProcessarMensagemAsync(whatsapp, mensagem);
+                // Tenta extrair número e mensagem (funciona com vários provedores)
+                string whatsapp = ExtrairNumeroWhatsApp(payload);
+                string mensagem = ExtrairMensagem(payload);
 
-            // Aqui vamos chamar o envio da mensagem de volta pro cliente
-            Console.WriteLine($"🤖 Resposta automática: {resposta}");
+                if (string.IsNullOrEmpty(whatsapp) || string.IsNullOrEmpty(mensagem))
+                {
+                    return BadRequest("Não foi possível extrair número ou mensagem");
+                }
 
-            return Ok(new { status = "ok", resposta });
+                Console.WriteLine($"✅ Mensagem recebida de {whatsapp}: {mensagem}");
+
+                var (resposta, projetoId) = await _whatsAppService.ProcessarMensagemAsync(whatsapp, mensagem);
+
+                // TODO: Aqui vamos chamar o serviço de envio de mensagem de volta
+                Console.WriteLine($"🤖 Resposta gerada: {resposta}");
+
+                return Ok(new { status = "success", resposta, projetoId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Erro no webhook: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
-        [HttpGet("webhook")]
-        public IActionResult Verify([FromQuery] string hub_challenge = "")
+        // Método auxiliar para extrair número (funciona com Meta e Evolution API)
+        private string ExtrairNumeroWhatsApp(dynamic payload)
         {
-            return Ok(hub_challenge);
+            try
+            {
+                // Meta WhatsApp Business API
+                if (payload.entry != null)
+                {
+                    var changes = payload.entry[0].changes[0].value.messages[0];
+                    string from = changes.from.ToString();
+                    return from;
+                }
+
+                // Evolution API ou outros
+                if (payload.from != null) return payload.from.ToString();
+                if (payload.key?.remoteJid != null) return payload.key.remoteJid.ToString().Replace("@s.whatsapp.net", "");
+
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        // Método auxiliar para extrair texto da mensagem
+        private string ExtrairMensagem(dynamic payload)
+        {
+            try
+            {
+                if (payload.entry != null)
+                {
+                    var message = payload.entry[0].changes[0].value.messages[0];
+                    return message.text?.body?.ToString() ?? "";
+                }
+
+                if (payload.text != null) return payload.text.ToString();
+                if (payload.message?.conversation != null) return payload.message.conversation.ToString();
+
+                return payload.ToString();
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        // Verificação do webhook (obrigatório para Meta/Evolution)
+        [HttpGet("webhook")]
+        public IActionResult VerifyWebhook([FromQuery] string hub_mode, [FromQuery] string hub_challenge, [FromQuery] string hub_verify_token)
+        {
+            // Coloque aqui seu token de verificação se usar Meta
+            if (hub_mode == "subscribe")
+                return Ok(hub_challenge);
+
+            return Ok("Webhook configurado com sucesso!");
         }
     }
 }
