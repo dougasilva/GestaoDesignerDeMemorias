@@ -15,7 +15,8 @@ namespace GestaoDesignerDeMemorias.Services
 
         public async Task ProcessarMensagemAsync(string whatsapp, string mensagemTexto)
         {
-            // Busca ou cria o cliente
+            mensagemTexto = mensagemTexto.ToLower();
+
             var cliente = await _context.Clientes
                 .FirstOrDefaultAsync(c => c.WhatsApp == whatsapp);
 
@@ -31,12 +32,11 @@ namespace GestaoDesignerDeMemorias.Services
                 await _context.SaveChangesAsync();
             }
 
-            // Cria um novo projeto
             var projeto = new Projeto
             {
                 ClienteId = cliente.Id,
-                NomeEvento = $"Pedido via WhatsApp - {DateTime.Now:dd/MM}",
-                TipoProjeto = "Evento",
+                NomeEvento = $"Pedido via WhatsApp - {DateTime.Now:dd/MM/yyyy}",
+                TipoProjeto = mensagemTexto.Contains("empresa") || mensagemTexto.Contains("logo") ? "Empreendedor" : "Evento",
                 Status = "Novo",
                 DataCriacao = DateTime.UtcNow
             };
@@ -44,8 +44,9 @@ namespace GestaoDesignerDeMemorias.Services
             _context.Projetos.Add(projeto);
             await _context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ Novo lead processado! Projeto ID: {projeto.Id} | Cliente: {whatsapp}");
-            // Aqui vamos adicionar depois o envio de resposta automática
+            Console.WriteLine($"📨 Novo lead processado! Tipo: {projeto.TipoProjeto} | Projeto ID: {projeto.Id}");
+
+            // Aqui vamos adicionar respostas automáticas no próximo passo
         }
     }
 }
