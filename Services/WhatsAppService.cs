@@ -46,6 +46,10 @@ namespace GestaoDesignerDeMemorias.Services
 
             string respostaAutomatica = GerarRespostaAutomatica(mensagemTexto, projeto.Id, cliente.Nome);
 
+            // Após criar o projeto...
+            var sender = new WhatsAppSenderService(); // vamos injetar depois
+            await sender.EnviarMensagemAsync(whatsapp, respostaAutomatica);
+
             Console.WriteLine($"📨 Mensagem processada → Resposta enviada para {whatsapp}");
 
             return (respostaAutomatica, projeto.Id);

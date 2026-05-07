@@ -25,6 +25,9 @@ builder.Services.AddScoped<PropostaPdfService>();
 // Registra o serviço de WhatsApp
 builder.Services.AddScoped<WhatsAppService>();
 
+// Registra o serviço de envio de mensagens (simulado por enquanto)
+builder.Services.AddScoped<WhatsAppSenderService>();
+
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
