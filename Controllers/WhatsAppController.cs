@@ -22,38 +22,25 @@ namespace GestaoDesignerDeMemorias.Controllers
             {
                 Console.WriteLine($"📨 Payload recebido: {payload}");
 
-                // Extração segura
-                string whatsapp = "11995108729"; // fallback
-                string mensagem = "";
+                string whatsapp = payload.TryGetProperty("from", out var fromEl) 
+                    ? fromEl.GetString() ?? "11995108729" 
+                    : "11995108729";
 
-                // Tenta pegar "from" ou "phone"
-                if (payload.TryGetProperty("from", out var fromElement))
-                    whatsapp = fromElement.GetString() ?? whatsapp;
-
-                if (payload.TryGetProperty("phone", out var phoneElement))
-                    whatsapp = phoneElement.GetString() ?? whatsapp;
-
-                // Tenta pegar a mensagem
-                if (payload.TryGetProperty("text", out var textElement))
-                    mensagem = textElement.GetString() ?? "";
-
-                if (string.IsNullOrEmpty(mensagem) && payload.TryGetProperty("message", out var msgElement))
-                    mensagem = msgElement.GetString() ?? payload.ToString();
-
-                if (string.IsNullOrEmpty(mensagem))
-                    mensagem = payload.ToString();
+                string mensagem = payload.TryGetProperty("text", out var textEl) 
+                    ? textEl.GetString() ?? "" 
+                    : payload.ToString();
 
                 Console.WriteLine($"✅ Extraído → WhatsApp: {whatsapp} | Mensagem: {mensagem}");
 
-                var (resposta, projetoId) = await _whatsAppService.ProcessarMensagemAsync(whatsapp, mensagem);
+                // Processa e recebe a resposta gerada
+                string respostaGerada = await _whatsAppService.ProcessarMensagemAsync(whatsapp, mensagem);
 
                 return Ok(new 
                 { 
                     status = "success", 
                     whatsapp,
                     mensagem_recebida = mensagem,
-                    resposta_enviada = resposta,
-                    projetoId 
+                    resposta_enviada = respostaGerada
                 });
             }
             catch (Exception ex)

@@ -15,7 +15,7 @@ namespace GestaoDesignerDeMemorias.Services
             _senderService = senderService;
         }
 
-        public async Task ProcessarMensagemAsync(string whatsapp, string mensagemTexto)
+        public async Task<string> ProcessarMensagemAsync(string whatsapp, string mensagemTexto)
         {
             mensagemTexto = mensagemTexto.ToLower().Trim();
 
@@ -25,6 +25,8 @@ namespace GestaoDesignerDeMemorias.Services
             string resposta = await GerarRespostaAsync(mensagemTexto, projeto, cliente);
 
             await _senderService.EnviarMensagemAsync(whatsapp, resposta);
+
+            return resposta;   // ← Adicione este return
         }
 
         private async Task<Cliente> GetOrCreateClienteAsync(string whatsapp)
