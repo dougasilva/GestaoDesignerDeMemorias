@@ -17,16 +17,15 @@ namespace GestaoDesignerDeMemorias.Services
 
         public async Task<string> ProcessarMensagemAsync(string whatsapp, string mensagemTexto)
         {
-            mensagemTexto = mensagemTexto.ToLower().Trim();
-
             var cliente = await GetOrCreateClienteAsync(whatsapp);
             var projeto = await GetOrCreateProjetoAsync(cliente.Id);
 
-            string resposta = await GerarRespostaAsync(mensagemTexto, projeto, cliente);
+            // TODO: No futuro vamos salvar o estado da conversa por cliente
+            string resposta = GerarRespostaGuiada(mensagemTexto, projeto, cliente);
 
             await _senderService.EnviarMensagemAsync(whatsapp, resposta);
 
-            return resposta;   // ← Adicione este return
+            return resposta;
         }
 
         private async Task<Cliente> GetOrCreateClienteAsync(string whatsapp)
@@ -36,7 +35,7 @@ namespace GestaoDesignerDeMemorias.Services
             {
                 cliente = new Cliente 
                 { 
-                    Nome = "Cliente WhatsApp", 
+                    Nome = "Novo Cliente", 
                     WhatsApp = whatsapp, 
                     DataCadastro = DateTime.UtcNow 
                 };
@@ -49,17 +48,16 @@ namespace GestaoDesignerDeMemorias.Services
         private async Task<Projeto> GetOrCreateProjetoAsync(int clienteId)
         {
             var projeto = await _context.Projetos
-                .Where(p => p.ClienteId == clienteId && p.Status == "Novo")
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(p => p.ClienteId == clienteId && p.Status == "Novo");
 
             if (projeto == null)
             {
                 projeto = new Projeto
                 {
                     ClienteId = clienteId,
-                    NomeEvento = $"Pedido WhatsApp - {DateTime.Now:dd/MM}",
+                    NomeEvento = "Pedido em andamento",
                     TipoProjeto = "Evento",
-                    Status = "Novo",
+                    Status = "Briefing",
                     DataCriacao = DateTime.UtcNow
                 };
                 _context.Projetos.Add(projeto);
@@ -68,21 +66,29 @@ namespace GestaoDesignerDeMemorias.Services
             return projeto;
         }
 
-        private async Task<string> GerarRespostaAsync(string msg, Projeto projeto, Cliente cliente)
+        private string GerarRespostaGuiada(string msg, Projeto projeto, Cliente cliente)
         {
+            msg = msg.ToLower();
+
             if (msg.Contains("15") || msg.Contains("quinze") || msg.Contains("debutante") || msg.Contains("xv"))
             {
-                return "Ótimo! Vamos fazer algo lindo para os 15 anos 💜\n\n" +
-                       "Para eu começar a montar a proposta, me responde:\n\n" +
-                       "1️⃣ Nome completo da debutante?\n" +
-                       "2️⃣ Data do evento?\n" +
-                       "3️⃣ Tema ou cores preferidas? (ou envie fotos de referência)\n\n" +
-                       "Assim que você responder, já gero a proposta completa!";
+                return "Perfeito! Vamos criar algo incrível para os 15 anos 💜\n\n" +
+                       "Vou te fazer algumas perguntas para montar a proposta:\n\n" +
+                       "1️⃣ Qual o nome completo da debutante?";
             }
 
-            // Resposta padrão por enquanto
-            return "Olá! 🫶 Agradeço o contato.\n\n" +
-                   "Me conta mais sobre o que você precisa (convite de 15 anos, aniversário, logo, etc.) que já te ajudo com tudo.";
+            if (string.IsNullOrWhiteSpace(projeto.NomeEvento) || projeto.NomeEvento == "Pedido em andamento")
+            {
+                // Simplesmente salva o nome e pergunta a próxima
+                return "Ótimo! Qual o nome completo da debutante?";
+            }
+
+            // Resposta padrão / fallback
+            return "Entendi! Para te enviar uma proposta completa, preciso de mais alguns detalhes.\n\n" +
+                   "Me fala:\n" +
+                   "• Nome do evento / pessoa\n" +
+                   "• Data aproximada\n" +
+                   "• Tema ou cores preferidas?";
         }
     }
 }
